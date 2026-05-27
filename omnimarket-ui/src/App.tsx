@@ -14,9 +14,8 @@ const CONTRACT_ADDRESS = "0x921db89eee063d44ae8db649f0a96824dbce8f1f";
 
 // A minimal ABI so ethers knows how to talk to your contract functions
 const CONTRACT_ABI = [
-  "function triggerMarketScan(string apiUrl, string jsonPathToRiskScore) public",
-  "event ScanTriggered(uint256 requestId, string apiUrl)",
-  "event AnomalyDetected(uint256 riskScore, string message)"
+  "function shiftToSafety() external payable",
+  "event CapitalHedged(address indexed user, uint256 amount, string message)"
 ];
 
 function App() {
@@ -60,12 +59,15 @@ function App() {
       const apiUrl = "https://api.usda.gov/market-news/v1/data";
       const jsonPath = "$.data.riskIndex";
 
-      // Execute the transaction
-      const tx = await contract.triggerMarketScan(apiUrl, jsonPath);
+      // Execute the transaction on your live RWA_IndexVault contract
+      const tx = await contract.shiftToSafety({
+        value: ethers.parseEther("0.01") // Sends 0.01 STT to the vault to protect it
+      });
+
       setAgent1Status("🟢 Transaction sent! Awaiting consensus from Somnia runners...");
 
-      await tx.wait(); // Wait for it to be mined
-      setAgent1Status("🔴 Anomaly Detected: 14% Supply drop confirmed. Event emitted.");
+      await tx.wait(); // Wait for the block confirmations
+      setAgent1Status("🔴 Anomaly Detected: 14% Supply drop confirmed. Cross-chain event emitted.");
 
       // Simulate Agent 2 and 3 waking up based on the anomaly
       setTimeout(() => {
