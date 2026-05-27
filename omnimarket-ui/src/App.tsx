@@ -55,10 +55,6 @@ function App() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      // We pass the API endpoint for the Somnia Agent to fetch off-chain
-      const apiUrl = "https://api.usda.gov/market-news/v1/data";
-      const jsonPath = "$.data.riskIndex";
-
       // Execute the transaction on your live RWA_IndexVault contract
       const tx = await contract.shiftToSafety({
         value: ethers.parseEther("0.01") // Sends 0.01 STT to the vault to protect it
