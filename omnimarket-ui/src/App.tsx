@@ -10,7 +10,7 @@ declare global {
 }
 
 // Note: You will replace this with your actual deployed contract address later
-const CONTRACT_ADDRESS = "0xYourDeployedContractAddressHere";
+const CONTRACT_ADDRESS = "0x921db89eee063d44ae8db649f0a96824dbce8f1f";
 
 // A minimal ABI so ethers knows how to talk to your contract functions
 const CONTRACT_ABI = [
