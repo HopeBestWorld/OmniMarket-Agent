@@ -54,7 +54,7 @@ export default function App() {
     const strategist = new ethers.Contract(RISK_STRATEGIST_ADDRESS, RISK_STRATEGIST_ABI, provider);
     const vault = new ethers.Contract(RWA_VAULT_ADDRESS, RWA_VAULT_ABI, provider);
 
-    watcher.on("ScanTriggered", (scanId, platformRequestId) => {
+    watcher.on("ScanTriggered", (_scanId, platformRequestId) => {
       setAgent1(`🟡 Live Scrape Executed! Somnia Task ID: ${platformRequestId.toString()}. Checking Barchart indices...`);
     });
 
