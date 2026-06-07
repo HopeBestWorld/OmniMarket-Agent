@@ -64,6 +64,8 @@ export default function App() {
   useEffect(() => {
     if (!provider) return;
 
+    let active = true;
+
     const watcher = new ethers.Contract(
       DATA_WATCHER_ADDRESS,
       DATA_WATCHER_ABI,
@@ -108,6 +110,7 @@ export default function App() {
     });
 
     return () => {
+      active = false;
       watcher.removeAllListeners();
       strategist.removeAllListeners();
       vault.removeAllListeners();

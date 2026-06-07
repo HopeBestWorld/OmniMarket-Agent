@@ -55,7 +55,7 @@ contract RiskStrategist {
         emit HedgeCalculated(shockCount, hedgeBps);
 
         if (hedgeBps > 0) {
-            IActionTaker(actionTaker).executeHedge(hedgeBps);
+            IActionTaker(actionTaker).executeHedge{value: address(this).balance}(hedgeBps);
             emit HedgeTriggered(shockCount, hedgeBps);
         }
     }
