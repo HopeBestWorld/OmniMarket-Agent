@@ -8,20 +8,14 @@ declare global {
   }
 }
 
-/* ============================
-   DEPLOYED CONTRACT ADDRESSES
-   ============================ */
 const DATA_WATCHER_ADDRESS = import.meta.env.VITE_DATA_WATCHER!;
 const RISK_STRATEGIST_ADDRESS = import.meta.env.VITE_RISK_STRATEGIST!;
 const RWA_VAULT_ADDRESS = import.meta.env.VITE_RWA_VAULT!;
 
-/* ============================
-   ABIs (MATCH CONTRACTS)
-   ============================ */
 const DATA_WATCHER_ABI = [
-  "function triggerMarketScan(string source, uint256 riskScore, uint256 confidence)",
-  "event ScanTriggered(uint256 indexed scanId, string source)",
-  "event AnomalyDetected(uint256 indexed scanId, uint256 riskScore, uint256 confidence, string message)"
+  "function triggerMarketScan() external payable returns (uint256 platformId)",
+  "event ScanTriggered(uint256 indexed scanId, uint256 platformRequestId)",
+  "event AnomalyDetected(uint256 indexed scanId, uint256 riskScore, string message)"
 ];
 
 const RISK_STRATEGIST_ABI = [
@@ -40,71 +34,45 @@ export default function App() {
   const [agent1, setAgent1] = useState("Standby. Awaiting scan trigger.");
   const [agent2, setAgent2] = useState("Standby. Listening for anomalies.");
   const [agent3, setAgent3] = useState("Standby. Awaiting hedge execution.");
-
   const [busy, setBusy] = useState(false);
 
-  /* ============================
-     WALLET CONNECTION
-     ============================ */
   const connectWallet = async () => {
     if (!window.ethereum) {
       alert("MetaMask not detected");
       return;
     }
-
     const prov = new ethers.BrowserProvider(window.ethereum);
     const accounts = await prov.send("eth_requestAccounts", []);
     setProvider(prov);
     setWallet(accounts[0]);
   };
 
-  /* ============================
-     EVENT SUBSCRIPTIONS
-     ============================ */
   useEffect(() => {
     if (!provider) return;
 
-    const watcher = new ethers.Contract(
-      DATA_WATCHER_ADDRESS,
-      DATA_WATCHER_ABI,
-      provider
-    );
+    const watcher = new ethers.Contract(DATA_WATCHER_ADDRESS, DATA_WATCHER_ABI, provider);
+    const strategist = new ethers.Contract(RISK_STRATEGIST_ADDRESS, RISK_STRATEGIST_ABI, provider);
+    const vault = new ethers.Contract(RWA_VAULT_ADDRESS, RWA_VAULT_ABI, provider);
 
-    const strategist = new ethers.Contract(
-      RISK_STRATEGIST_ADDRESS,
-      RISK_STRATEGIST_ABI,
-      provider
-    );
-
-    const vault = new ethers.Contract(
-      RWA_VAULT_ADDRESS,
-      RWA_VAULT_ABI,
-      provider
-    );
-
-    watcher.on("ScanTriggered", (_scanId, source) => {
-      setAgent1(`🟡 Scan triggered from ${source}`);
+    watcher.on("ScanTriggered", (scanId, platformRequestId) => {
+      setAgent1(`🟡 Live Scrape Executed! Somnia Task ID: ${platformRequestId.toString()}. Checking Barchart indices...`);
     });
 
-    watcher.on(
-      "AnomalyDetected",
-      (_scanId, riskScore: bigint, confidence: bigint) => {
-        setAgent1(`🔴 Anomaly detected (Risk: ${riskScore})`);
-        setAgent2(`🟢 Confidence ${confidence}%. Assessing hedge.`);
-      }
-    );
+    watcher.on("AnomalyDetected", (_scanId, riskScore: bigint) => {
+      setAgent1(`🔴 AI Extraction Complete! Confirmed true supply-chain drop value: ${riskScore.toString()}%`);
+    });
 
     strategist.on("ShockReceived", (_id, severity: bigint, confidence: bigint) => {
-      setAgent2(`🟡 Shock received (Severity ${severity}, Confidence ${confidence}%)`);
+      setAgent2(`🟡 Evaluating exposure risk context (True Severity: ${severity.toString()}%, Confidence Weighting: ${confidence.toString()}%)`);
     });
 
     strategist.on("HedgeTriggered", (_id, hedgeBps: bigint) => {
-      setAgent2(`🟢 Hedge computed: ${Number(hedgeBps) / 100}%`);
-      setAgent3("🟡 Executing autonomous hedge.");
+      setAgent2(`🟢 Calculated Risk Frontier Mitigator Strategy. Shifting ${Number(hedgeBps) / 100}% asset balance.`);
+      setAgent3("自行 Action Taker: Securing capital into asset proxies...");
     });
 
     vault.on("CapitalHedged", (_source, amount: bigint) => {
-      setAgent3(`🟢 ${ethers.formatEther(amount)} ETH secured in vault`);
+      setAgent3(`🟢 Success! Locked ${ethers.formatEther(amount)} STT safely inside the index proxy contract.`);
       setBusy(false);
     });
 
@@ -115,41 +83,38 @@ export default function App() {
     };
   }, [provider]);
 
-  /* ============================
-     TRIGGER AGENT 1
-     ============================ */
   const startScan = async () => {
     if (!provider || !wallet) return;
 
-    setBusy(true);
-    setAgent1("🟡 Initializing market scan…");
+    try {
+      setBusy(true);
+      setAgent1("📡 Packaging secure payload parameters for decentralized validators...");
+      setAgent2("Standby...");
+      setAgent3("Standby...");
 
-    const signer = await provider.getSigner();
-    const watcher = new ethers.Contract(
-      DATA_WATCHER_ADDRESS,
-      DATA_WATCHER_ABI,
-      signer
-    );
+      const signer = await provider.getSigner();
+      const watcher = new ethers.Contract(DATA_WATCHER_ADDRESS, DATA_WATCHER_ABI, signer);
 
-    // Demo values (replace with real oracle output later)
-    await watcher.triggerMarketScan(
-      "USDA Supply Index",
-      45, // riskScore
-      82  // confidence
-    );
+      // Sizing gas pool payment requirements upfront: min operations floor + agent fees (0.33 STT)
+      const executionFee = ethers.parseEther("0.35");
+
+      const tx = await watcher.triggerMarketScan({ value: executionFee });
+      setAgent1("⏳ Broadcasting transaction to Somnia block infrastructure...");
+      await tx.wait();
+
+    } catch (err) {
+      console.error("Pipeline failure:", err);
+      setAgent1("Failed to initiate scan.");
+      setBusy(false);
+    }
   };
 
-  /* ============================
-     UI
-     ============================ */
   return (
     <div className="dashboard">
       <div className="header">
         <h1>OmniMarket Agent (OMA)</h1>
         {!wallet ? (
-          <button className="btn" onClick={connectWallet}>
-            Connect Wallet
-          </button>
+          <button className="btn" onClick={connectWallet}>Connect Wallet</button>
         ) : (
           <p>🟢 Connected ({wallet.slice(0, 6)}…{wallet.slice(-4)})</p>
         )}
@@ -157,7 +122,7 @@ export default function App() {
 
       <div className="controls">
         <button className="btn" onClick={startScan} disabled={busy || !wallet}>
-          {busy ? "Agents Running…" : "Trigger Market Scan"}
+          {busy ? "Decentralized AI Query Processing…" : "Trigger Autonomous Market Scan"}
         </button>
       </div>
 
@@ -166,12 +131,10 @@ export default function App() {
           <h2>Agent 1: Data Watcher</h2>
           <p><strong>Status:</strong> {agent1}</p>
         </div>
-
         <div className="card">
           <h2>Agent 2: Risk Strategist</h2>
           <p><strong>Status:</strong> {agent2}</p>
         </div>
-
         <div className="card">
           <h2>Agent 3: Action Taker</h2>
           <p><strong>Status:</strong> {agent3}</p>
