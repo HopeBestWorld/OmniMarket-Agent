@@ -39,13 +39,12 @@ OMA utilizes a three-agent hierarchy to manage risk:
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/HopeBestWorld/OmniMarket-Agent.git](https://github.com/HopeBestWorld/OmniMarket-Agent.git)
+   git clone https://github.com/HopeBestWorld/OmniMarket-Agent.git
    cd OmniMarket-Agent
 
 ```
 
 2. Install dependencies:
-```bash
 npm install
 
 ```
