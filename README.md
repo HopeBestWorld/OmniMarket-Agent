@@ -17,6 +17,8 @@ OMA utilizes a three-agent hierarchy to manage risk:
    - Executes the final protective hedge by shifting at-risk capital to the `RWA_IndexVault`.
    - Ensures funds are secured in stable, broad-market equity proxies (VOO/VTI equivalents).
 
+Once initialized, agents operate autonomously: anomalies detected by Agent 1 emit on-chain events that wake Agent 2 and Agent 3 without further user input.
+
 ## 🛠 Tech Stack
 - **Blockchain:** Somnia Shannon Testnet
 - **Smart Contracts:** Solidity
@@ -28,6 +30,22 @@ OMA utilizes a three-agent hierarchy to manage risk:
 | Contract | Address |
 | :--- | :--- |
 | **RWA_IndexVault** | `0x921db89eee063d44ae8db649f0a96824dbce8f1f` |
+
+## Why Somnia Agentic L1
+
+OmniMarket Agent is built specifically for Somnia because it requires:
+
+- Native agent execution and scheduling
+- Trustless off-chain data ingestion via agent request primitives
+- Event-driven agent-to-agent communication on L1
+- Autonomous execution without centralized bots or keepers
+
+Somnia’s Agentic L1 enables OMA to operate continuously and autonomously, rather than as a user-triggered automation script.
+
+## 🔗 Links
+- Live Demo: https://omnimarket-agent.vercel.app/
+- Demo Video: https://youtu.be/xH_XugmQd0c
+- Slides: [\[Google Slides link\]](https://docs.google.com/presentation/d/1c54ZrLiqrtDfUCKxthH5oOQXz5ITDRxQd9hJr7zX10U/edit?usp=sharing)
 
 ## 💻 Setup Instructions
 
@@ -55,8 +73,6 @@ npm install
 npm run dev
 
 ```
-
-
 
 ## 📈 Demo
 
