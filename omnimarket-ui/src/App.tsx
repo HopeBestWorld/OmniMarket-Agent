@@ -15,10 +15,8 @@ const RWA_VAULT_ADDRESS = import.meta.env.VITE_RWA_VAULT!;
 const DATA_WATCHER_ABI = [
   "function triggerMarketScan() payable returns (uint256)",
   "function getRequiredFee() view returns (uint256)",
-  "event ScanTriggered(uint256 scanId, uint256 platformRequestId)",
-  "event AnomalyDetected(uint256 scanId, uint256 riskScore)",
-  "event DebugFee(uint256 reserve, uint256 reward, uint256 total)",
-  "event DebugCaller(address caller, address owner)"
+  "event ScanTriggered(uint256 indexed scanId, uint256 platformRequestId)",
+  "event AnomalyDetected(uint256 indexed scanId, uint256 riskScore)"
 ];
 
 const RISK_STRATEGIST_ABI = [
@@ -40,6 +38,10 @@ export default function App() {
   const [busy, setBusy] = useState(false);
 
   const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("MetaMask extension not found");
+      return;
+    }
     const prov = new ethers.BrowserProvider(window.ethereum);
     const accounts = await prov.send("eth_requestAccounts", []);
     setProvider(prov);
@@ -53,25 +55,25 @@ export default function App() {
     const strategist = new ethers.Contract(RISK_STRATEGIST_ADDRESS, RISK_STRATEGIST_ABI, provider);
     const vault = new ethers.Contract(RWA_VAULT_ADDRESS, RWA_VAULT_ABI, provider);
 
-    watcher.on("ScanTriggered", (_, id) => {
-      setAgent1(`🟡 Scan dispatched. Somnia task: ${id}`);
+    watcher.on("ScanTriggered", (_scanId, id) => {
+      setAgent1(`打 Scan dispatched. Somnia live tracking thread ID: ${id.toString()}`);
     });
 
-    watcher.on("AnomalyDetected", (_, score) => {
-      setAgent1(`🔴 AI confirmed anomaly: ${score}%`);
+    watcher.on("AnomalyDetected", (_scanId, score) => {
+      setAgent1(`猸 Real-world parsing context resolved. Extracted baseline drop value: ${score.toString()}%`);
     });
 
-    strategist.on("ShockReceived", (_, severity, confidence) => {
-      setAgent2(`🧠 Risk evaluated: ${severity}% (confidence ${confidence}%)`);
+    strategist.on("ShockReceived", (_id, severity, confidence) => {
+      setAgent2(`繹 Deep verification active: Risk index is ${severity.toString()}% (Evaluated Confidence: ${confidence.toString()}%)`);
     });
 
-    strategist.on("HedgeTriggered", (_, hedgeBps) => {
-      setAgent2(`🟢 Hedge strategy: ${Number(hedgeBps) / 100}%`);
-      setAgent3("Executing capital rotation…");
+    strategist.on("HedgeTriggered", (_id, hedgeBps) => {
+      setAgent2(`塭 Strategic hedge execution index computed: ${Number(hedgeBps) / 100}%`);
+      setAgent3("Autonomous hedge routing active...");
     });
 
     vault.on("CapitalHedged", (_, amount) => {
-      setAgent3(`✅ Secured ${ethers.formatEther(amount)} STT`);
+      setAgent3(`險 Portfolio Protection Complete: Vault secured ${ethers.formatEther(amount)} STT safely.`);
       setBusy(false);
     });
 
@@ -87,33 +89,42 @@ export default function App() {
 
     try {
       setBusy(true);
-      setAgent1("🧠 Preparing AI request…");
+      setAgent1("馯 Instantiating on-chain query environment parameters...");
+      setAgent2("Standby...");
+      setAgent3("Standby...");
 
       const signer = await provider.getSigner();
       const watcher = new ethers.Contract(DATA_WATCHER_ADDRESS, DATA_WATCHER_ABI, signer);
 
+      // Query the optimized fee requirement mapping method directly from the contract instance
       const fee = await watcher.getRequiredFee();
-      const tx = await watcher.triggerMarketScan({ value: fee });
 
+      const tx = await watcher.triggerMarketScan({ value: fee });
+      setAgent1("鉁 Query submitted successfully. Routing via consensus subcommittee layers...");
       await tx.wait();
     } catch (e) {
       console.error(e);
-      setAgent1("❌ Scan failed");
+      setAgent1("櫃 Pipeline transaction processing failed");
       setBusy(false);
     }
   };
 
   return (
     <div className="dashboard">
-      <h1>OmniMarket Agent</h1>
+      <div className="header">
+        <h1>OmniMarket Agent</h1>
+        {!wallet ? (
+          <button className="btn" onClick={connectWallet}>Connect Wallet</button>
+        ) : (
+          <p>鉁 Wallet Linked: ({wallet.slice(0, 6)}…{wallet.slice(-4)})</p>
+        )}
+      </div>
 
-      {!wallet ? (
-        <button onClick={connectWallet}>Connect Wallet</button>
-      ) : (
-        <button onClick={startScan} disabled={busy}>
-          {busy ? "Processing…" : "Trigger Market Scan"}
+      <div className="controls">
+        <button className="btn" onClick={startScan} disabled={busy || !wallet}>
+          {busy ? "Processing Active Pipeline…" : "Trigger Autonomous Market Scan"}
         </button>
-      )}
+      </div>
 
       <div className="agent-grid">
         <div className="card"><h2>Data Watcher</h2><p>{agent1}</p></div>
