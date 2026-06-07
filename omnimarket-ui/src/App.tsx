@@ -13,9 +13,9 @@ const RISK_STRATEGIST_ADDRESS = import.meta.env.VITE_RISK_STRATEGIST!;
 const RWA_VAULT_ADDRESS = import.meta.env.VITE_RWA_VAULT!;
 
 const DATA_WATCHER_ABI = [
-  "function triggerMarketScan() external payable returns (uint256 platformId)",
-  "event ScanTriggered(uint256 indexed scanId, uint256 platformRequestId)",
-  "event AnomalyDetected(uint256 indexed scanId, uint256 riskScore, string message)"
+  "function triggerMarketScan(string apiUrl, string jsonPathToRiskScore) public", // Ensure this matches your Solidity
+  "event ScanTriggered(uint256 requestId, string apiUrl)",
+  "event AnomalyDetected(uint256 riskScore, string message)"
 ];
 
 const RISK_STRATEGIST_ABI = [
@@ -88,18 +88,23 @@ export default function App() {
 
     try {
       setBusy(true);
-      setAgent1("📡 Packaging secure payload parameters for decentralized validators...");
-      setAgent2("Standby...");
-      setAgent3("Standby...");
+      setAgent1("📡 Packaging secure payload parameters...");
 
       const signer = await provider.getSigner();
-      const watcher = new ethers.Contract(DATA_WATCHER_ADDRESS, DATA_WATCHER_ABI, signer);
+      const watcher = new ethers.Contract(
+        DATA_WATCHER_ADDRESS,
+        DATA_WATCHER_ABI,
+        signer
+      );
 
-      // Sizing gas pool payment requirements upfront: min operations floor + agent fees (0.33 STT)
-      const executionFee = ethers.parseEther("0.35");
+      // Define your scan parameters here
+      const apiUrl = "https://api.usda.gov/market-news/v1/data";
+      const jsonPath = "$.data.riskIndex";
 
-      const tx = await watcher.triggerMarketScan({ value: executionFee });
-      setAgent1("⏳ Broadcasting transaction to Somnia block infrastructure...");
+      // Pass the arguments that your Solidity contract expects
+      const tx = await watcher.triggerMarketScan(apiUrl, jsonPath);
+
+      setAgent1("⏳ Broadcasting transaction...");
       await tx.wait();
 
     } catch (err) {
