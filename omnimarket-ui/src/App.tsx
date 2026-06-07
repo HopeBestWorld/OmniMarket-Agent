@@ -13,9 +13,11 @@ const RISK_STRATEGIST_ADDRESS = import.meta.env.VITE_RISK_STRATEGIST!;
 const RWA_VAULT_ADDRESS = import.meta.env.VITE_RWA_VAULT!;
 
 const DATA_WATCHER_ABI = [
-  "function triggerMarketScan(string apiUrl, string jsonPathToRiskScore) public", // Ensure this matches your Solidity
-  "event ScanTriggered(uint256 requestId, string apiUrl)",
-  "event AnomalyDetected(uint256 riskScore, string message)"
+  "function triggerMarketScan() payable returns (uint256)",
+  "function getRequiredFee() view returns (uint256)",
+  "event ScanTriggered(uint256 scanId, uint256 platformRequestId)",
+  "event DebugFee(uint256 reserve, uint256 reward, uint256 total)",
+  "event DebugCaller(address caller, address owner)"
 ];
 
 const RISK_STRATEGIST_ABI = [
@@ -88,7 +90,7 @@ export default function App() {
 
     try {
       setBusy(true);
-      setAgent1("📡 Packaging secure payload parameters...");
+      setAgent1("🧠 Preparing decentralized AI request...");
 
       const signer = await provider.getSigner();
       const watcher = new ethers.Contract(
@@ -97,23 +99,25 @@ export default function App() {
         signer
       );
 
-      // Define your scan parameters here
-      const apiUrl = "https://api.usda.gov/market-news/v1/data";
-      const jsonPath = "$.data.riskIndex";
+      // ✅ ask the contract for the exact required fee
+      const requiredFee: bigint = await watcher.getRequiredFee();
 
-      // Pass the arguments that your Solidity contract expects
-      const tx = await watcher.triggerMarketScan(apiUrl, jsonPath);
+      console.log("Calling triggerMarketScan as", await signer.getAddress());
+      console.log("Required fee:", ethers.formatEther(requiredFee));
 
-      setAgent1("⏳ Broadcasting transaction...");
+      const tx = await watcher.triggerMarketScan({
+        value: requiredFee
+      });
+
+      setAgent1("📡 Transaction broadcasted. Awaiting confirmation...");
       await tx.wait();
 
     } catch (err) {
       console.error("Pipeline failure:", err);
-      setAgent1("Failed to initiate scan.");
+      setAgent1("❌ Scan failed during initialization.");
       setBusy(false);
     }
   };
-
   return (
     <div className="dashboard">
       <div className="header">
