@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 /* ===================== ERRORS ===================== */
 error InsufficientFee(uint256 sent, uint256 required);
 error NotOwner(address caller);
+error PlatformNotSet();
 
 /* ===================== INTERFACES ===================== */
 interface IAgentRequester {
@@ -34,6 +35,7 @@ contract DataWatcherAgent {
 
     /* ===================== EVENTS ===================== */
     event ScanTriggered(uint256 indexed scanId, uint256 platformRequestId);
+    event AnomalyDetected(uint256 indexed scanId, uint256 riskScore);
     event DebugFee(uint256 reserve, uint256 reward, uint256 total);
     event DebugCaller(address caller, address owner);
 
@@ -49,9 +51,13 @@ contract DataWatcherAgent {
     }
 
     /* =====================================================
-       ✅ FRONTEND-SAFE FEE QUOTE (NO HARDCODING)
+       FRONTEND-SAFE FEE QUOTE (NO REVERTS)
        ===================================================== */
-    function getRequiredFee() external view returns (uint256 total) {
+    function getRequiredFee() external view returns (uint256) {
+        if (address(somniaPlatform) == address(0)) {
+            revert PlatformNotSet();
+        }
+
         uint256 reserve = somniaPlatform.getRequestDeposit();
         uint256 reward = reserve * SUBCOMMITTEE_SIZE;
         return reserve + reward;
@@ -67,6 +73,10 @@ contract DataWatcherAgent {
         returns (uint256 platformId)
     {
         scanCount++;
+
+        if (address(somniaPlatform) == address(0)) {
+            revert PlatformNotSet();
+        }
 
         bytes memory payload = abi.encode(
             "milk_supply_drop_pct",
@@ -96,12 +106,20 @@ contract DataWatcherAgent {
     }
 
     /* =====================================================
-       SOMNIA CALLBACK (unchanged)
+       SOMNIA CALLBACK (SIMULATED FOR NOW)
        ===================================================== */
     function fulfillMarketScan(
         uint256 requestId,
-        bytes[] calldata responses
+        bytes[] calldata
     ) external {
-        // omitted for brevity
+        if (!pendingQueries[requestId]) return;
+
+        delete pendingQueries[requestId];
+
+        uint256 simulatedRiskScore = 42; // placeholder AI output
+        emit AnomalyDetected(scanCount, simulatedRiskScore);
+
+        // downstream hook
+        riskStrategist.onMarketShock(simulatedRiskScore, 90);
     }
 }

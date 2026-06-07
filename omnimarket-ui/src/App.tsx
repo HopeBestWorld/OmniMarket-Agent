@@ -16,6 +16,7 @@ const DATA_WATCHER_ABI = [
   "function triggerMarketScan() payable returns (uint256)",
   "function getRequiredFee() view returns (uint256)",
   "event ScanTriggered(uint256 scanId, uint256 platformRequestId)",
+  "event AnomalyDetected(uint256 scanId, uint256 riskScore)",
   "event DebugFee(uint256 reserve, uint256 reward, uint256 total)",
   "event DebugCaller(address caller, address owner)"
 ];
@@ -39,10 +40,6 @@ export default function App() {
   const [busy, setBusy] = useState(false);
 
   const connectWallet = async () => {
-    if (!window.ethereum) {
-      alert("MetaMask not detected");
-      return;
-    }
     const prov = new ethers.BrowserProvider(window.ethereum);
     const accounts = await prov.send("eth_requestAccounts", []);
     setProvider(prov);
@@ -56,25 +53,25 @@ export default function App() {
     const strategist = new ethers.Contract(RISK_STRATEGIST_ADDRESS, RISK_STRATEGIST_ABI, provider);
     const vault = new ethers.Contract(RWA_VAULT_ADDRESS, RWA_VAULT_ABI, provider);
 
-    watcher.on("ScanTriggered", (_scanId, platformRequestId) => {
-      setAgent1(`🟡 Live Scrape Executed! Somnia Task ID: ${platformRequestId.toString()}. Checking Barchart indices...`);
+    watcher.on("ScanTriggered", (_, id) => {
+      setAgent1(`🟡 Scan dispatched. Somnia task: ${id}`);
     });
 
-    watcher.on("AnomalyDetected", (_scanId, riskScore: bigint) => {
-      setAgent1(`🔴 AI Extraction Complete! Confirmed true supply-chain drop value: ${riskScore.toString()}%`);
+    watcher.on("AnomalyDetected", (_, score) => {
+      setAgent1(`🔴 AI confirmed anomaly: ${score}%`);
     });
 
-    strategist.on("ShockReceived", (_id, severity: bigint, confidence: bigint) => {
-      setAgent2(`🟡 Evaluating exposure risk context (True Severity: ${severity.toString()}%, Confidence Weighting: ${confidence.toString()}%)`);
+    strategist.on("ShockReceived", (_, severity, confidence) => {
+      setAgent2(`🧠 Risk evaluated: ${severity}% (confidence ${confidence}%)`);
     });
 
-    strategist.on("HedgeTriggered", (_id, hedgeBps: bigint) => {
-      setAgent2(`🟢 Calculated Risk Frontier Mitigator Strategy. Shifting ${Number(hedgeBps) / 100}% asset balance.`);
-      setAgent3("自行 Action Taker: Securing capital into asset proxies...");
+    strategist.on("HedgeTriggered", (_, hedgeBps) => {
+      setAgent2(`🟢 Hedge strategy: ${Number(hedgeBps) / 100}%`);
+      setAgent3("Executing capital rotation…");
     });
 
-    vault.on("CapitalHedged", (_source, amount: bigint) => {
-      setAgent3(`🟢 Success! Locked ${ethers.formatEther(amount)} STT safely inside the index proxy contract.`);
+    vault.on("CapitalHedged", (_, amount) => {
+      setAgent3(`✅ Secured ${ethers.formatEther(amount)} STT`);
       setBusy(false);
     });
 
@@ -86,68 +83,42 @@ export default function App() {
   }, [provider]);
 
   const startScan = async () => {
-    if (!provider || !wallet) return;
+    if (!provider) return;
 
     try {
       setBusy(true);
-      setAgent1("🧠 Preparing decentralized AI request...");
+      setAgent1("🧠 Preparing AI request…");
 
       const signer = await provider.getSigner();
-      const watcher = new ethers.Contract(
-        DATA_WATCHER_ADDRESS,
-        DATA_WATCHER_ABI,
-        signer
-      );
+      const watcher = new ethers.Contract(DATA_WATCHER_ADDRESS, DATA_WATCHER_ABI, signer);
 
-      // ✅ ask the contract for the exact required fee
-      const requiredFee: bigint = await watcher.getRequiredFee();
+      const fee = await watcher.getRequiredFee();
+      const tx = await watcher.triggerMarketScan({ value: fee });
 
-      console.log("Calling triggerMarketScan as", await signer.getAddress());
-      console.log("Required fee:", ethers.formatEther(requiredFee));
-
-      const tx = await watcher.triggerMarketScan({
-        value: requiredFee
-      });
-
-      setAgent1("📡 Transaction broadcasted. Awaiting confirmation...");
       await tx.wait();
-
-    } catch (err) {
-      console.error("Pipeline failure:", err);
-      setAgent1("❌ Scan failed during initialization.");
+    } catch (e) {
+      console.error(e);
+      setAgent1("❌ Scan failed");
       setBusy(false);
     }
   };
+
   return (
     <div className="dashboard">
-      <div className="header">
-        <h1>OmniMarket Agent (OMA)</h1>
-        {!wallet ? (
-          <button className="btn" onClick={connectWallet}>Connect Wallet</button>
-        ) : (
-          <p>🟢 Connected ({wallet.slice(0, 6)}…{wallet.slice(-4)})</p>
-        )}
-      </div>
+      <h1>OmniMarket Agent</h1>
 
-      <div className="controls">
-        <button className="btn" onClick={startScan} disabled={busy || !wallet}>
-          {busy ? "Decentralized AI Query Processing…" : "Trigger Autonomous Market Scan"}
+      {!wallet ? (
+        <button onClick={connectWallet}>Connect Wallet</button>
+      ) : (
+        <button onClick={startScan} disabled={busy}>
+          {busy ? "Processing…" : "Trigger Market Scan"}
         </button>
-      </div>
+      )}
 
       <div className="agent-grid">
-        <div className="card">
-          <h2>Agent 1: Data Watcher</h2>
-          <p><strong>Status:</strong> {agent1}</p>
-        </div>
-        <div className="card">
-          <h2>Agent 2: Risk Strategist</h2>
-          <p><strong>Status:</strong> {agent2}</p>
-        </div>
-        <div className="card">
-          <h2>Agent 3: Action Taker</h2>
-          <p><strong>Status:</strong> {agent3}</p>
-        </div>
+        <div className="card"><h2>Data Watcher</h2><p>{agent1}</p></div>
+        <div className="card"><h2>Risk Strategist</h2><p>{agent2}</p></div>
+        <div className="card"><h2>Action Taker</h2><p>{agent3}</p></div>
       </div>
     </div>
   );
