@@ -11,17 +11,17 @@ declare global {
 /* ============================
    DEPLOYED CONTRACT ADDRESSES
    ============================ */
-const DATA_WATCHER_ADDRESS = "0xYOUR_DATA_WATCHER";
-const RISK_STRATEGIST_ADDRESS = "0xYOUR_RISK_STRATEGIST";
-const RWA_VAULT_ADDRESS = "0xYOUR_RWA_VAULT";
+const DATA_WATCHER_ADDRESS = import.meta.env.VITE_DATA_WATCHER!;
+const RISK_STRATEGIST_ADDRESS = import.meta.env.VITE_RISK_STRATEGIST!;
+const RWA_VAULT_ADDRESS = import.meta.env.VITE_RWA_VAULT!;
 
 /* ============================
-   MINIMAL ABIs (EVENT-DRIVEN)
+   ABIs (MATCH CONTRACTS)
    ============================ */
 const DATA_WATCHER_ABI = [
-  "function triggerMarketScan(string apiUrl, string jsonPath)",
-  "event ScanTriggered(uint256 requestId, string apiUrl)",
-  "event AnomalyDetected(uint256 riskScore, string message)"
+  "function triggerMarketScan(string source, uint256 riskScore, uint256 confidence)",
+  "event ScanTriggered(uint256 indexed scanId, string source)",
+  "event AnomalyDetected(uint256 indexed scanId, uint256 riskScore, uint256 confidence, string message)"
 ];
 
 const RISK_STRATEGIST_ABI = [
@@ -82,28 +82,29 @@ export default function App() {
       provider
     );
 
-    watcher.on("ScanTriggered", () => {
-      setAgent1("🟡 Scan initiated. Ingesting off-chain market data…");
+    watcher.on("ScanTriggered", (_scanId, source) => {
+      setAgent1(`🟡 Scan triggered from ${source}`);
     });
 
-    watcher.on("AnomalyDetected", (riskScore: bigint) => {
-      setAgent1(`🔴 Anomaly detected (Risk Score: ${riskScore}).`);
-      setAgent2("🟢 Activated. Assessing exposure and severity.");
+    watcher.on(
+      "AnomalyDetected",
+      (_scanId, riskScore: bigint, confidence: bigint) => {
+        setAgent1(`🔴 Anomaly detected (Risk: ${riskScore})`);
+        setAgent2(`🟢 Confidence ${confidence}%. Assessing hedge.`);
+      }
+    );
+
+    strategist.on("ShockReceived", (_id, severity: bigint, confidence: bigint) => {
+      setAgent2(`🟡 Shock received (Severity ${severity}, Confidence ${confidence}%)`);
     });
 
-    strategist.on("ShockReceived", () => {
-      setAgent2("🟡 Shock received. Computing hedge parameters.");
-    });
-
-    strategist.on("HedgeTriggered", (_, hedgeBps: bigint) => {
+    strategist.on("HedgeTriggered", (_id, hedgeBps: bigint) => {
       setAgent2(`🟢 Hedge computed: ${Number(hedgeBps) / 100}%`);
-      setAgent3("🟡 Executing autonomous hedge on-chain.");
+      setAgent3("🟡 Executing autonomous hedge.");
     });
 
-    vault.on("CapitalHedged", (_, amount: bigint) => {
-      setAgent3(
-        `🟢 Capital secured: ${ethers.formatEther(amount)} ETH moved to safety.`
-      );
+    vault.on("CapitalHedged", (_source, amount: bigint) => {
+      setAgent3(`🟢 ${ethers.formatEther(amount)} ETH secured in vault`);
       setBusy(false);
     });
 
@@ -130,9 +131,11 @@ export default function App() {
       signer
     );
 
+    // Demo values (replace with real oracle output later)
     await watcher.triggerMarketScan(
-      "https://api.example.com/commodity-risk",
-      "$.risk_score"
+      "USDA Supply Index",
+      45, // riskScore
+      82  // confidence
     );
   };
 

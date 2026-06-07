@@ -1,68 +1,69 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface ISomniaAgent {
-    function requestJsonApi(
-        string calldata url,
-        string calldata jsonPath
-    ) external returns (uint256 requestId);
-}
-
+/* ============================
+   RISK STRATEGIST INTERFACE
+   ============================ */
 interface IRiskStrategist {
-    function onMarketShock(uint256 severity, uint256 confidence) external;
+    function onMarketShock(
+        uint256 severity,
+        uint256 confidence
+    ) external;
 }
 
+/* ============================
+   DATA WATCHER AGENT (AGENT 1)
+   ============================ */
 contract DataWatcherAgent {
-    ISomniaAgent public somniaAgent;
-    IRiskStrategist public riskStrategist;
     address public owner;
+    IRiskStrategist public riskStrategist;
 
-    uint256 public latestCommodityRiskScore;
+    uint256 public scanCount;
 
-    event ScanTriggered(uint256 requestId, string apiUrl);
-    event AnomalyDetected(uint256 riskScore, string message);
+    /* ============================
+       EVENTS (Frontend listens here)
+       ============================ */
+    event ScanTriggered(uint256 indexed scanId, string source);
+    event AnomalyDetected(
+        uint256 indexed scanId,
+        uint256 riskScore,
+        uint256 confidence,
+        string message
+    );
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
+        require(msg.sender == owner, "Unauthorized");
         _;
     }
 
-    constructor(
-        address _somniaAgentAddress,
-        address _riskStrategist
-    ) {
-        somniaAgent = ISomniaAgent(_somniaAgentAddress);
-        riskStrategist = IRiskStrategist(_riskStrategist);
+    constructor(address _riskStrategist) {
         owner = msg.sender;
+        riskStrategist = IRiskStrategist(_riskStrategist);
     }
 
+    /* ============================
+       AGENT ENTRYPOINT
+       ============================ */
     function triggerMarketScan(
-        string memory apiUrl,
-        string memory jsonPathToRiskScore
+        string calldata source,
+        uint256 riskScore,
+        uint256 confidence
     ) external onlyOwner {
-        uint256 reqId =
-            somniaAgent.requestJsonApi(apiUrl, jsonPathToRiskScore);
+        scanCount++;
 
-        emit ScanTriggered(reqId, apiUrl);
-    }
+        emit ScanTriggered(scanCount, source);
 
-    function fulfillMarketScan(
-        uint256,
-        uint256 riskScore
-    ) external {
-        latestCommodityRiskScore = riskScore;
-
-        if (riskScore > 80) {
+        // Simple anomaly threshold (production logic can be upgraded)
+        if (riskScore >= 30 && confidence >= 70) {
             emit AnomalyDetected(
+                scanCount,
                 riskScore,
-                "High Risk Detected — Escalating to Risk Strategist"
+                confidence,
+                "Market anomaly detected"
             );
 
-            // 🔥 REAL AGENT-TO-AGENT CALL
-            riskStrategist.onMarketShock(
-                riskScore,   // severity
-                90           // confidence (example)
-            );
+            // Wake Agent 2 (Risk Strategist)
+            riskStrategist.onMarketShock(riskScore, confidence);
         }
     }
 }

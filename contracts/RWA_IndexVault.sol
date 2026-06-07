@@ -8,7 +8,6 @@ contract RWA_IndexVault {
 
     function deposit() external payable {
         require(msg.value > 0, "No capital");
-
         balances[msg.sender] += msg.value;
         emit CapitalHedged(msg.sender, msg.value);
     }
