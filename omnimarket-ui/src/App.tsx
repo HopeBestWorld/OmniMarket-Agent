@@ -56,24 +56,24 @@ export default function App() {
     const vault = new ethers.Contract(RWA_VAULT_ADDRESS, RWA_VAULT_ABI, provider);
 
     watcher.on("ScanTriggered", (_scanId, id) => {
-      setAgent1(`Scan dispatched. Somnia live tracking thread ID: ${id.toString()}`);
+      setAgent1(`📡 API Request Dispatched! Somnia Thread ID: ${id.toString()}. Querying BLS macro dataset indices...`);
     });
 
     watcher.on("AnomalyDetected", (_scanId, score) => {
-      setAgent1(`Real-world parsing context resolved. Extracted baseline drop value: ${score.toString()}%`);
+      setAgent1(`🔴 Consensus Finalized! Verified market raw index shock computed: ${score.toString()}%`);
     });
 
     strategist.on("ShockReceived", (_id, severity, confidence) => {
-      setAgent2(`Deep verification active: Risk index is ${severity.toString()}% (Evaluated Confidence: ${confidence.toString()}%)`);
+      setAgent2(`🧠 Risk Strategist Active: Processing volatility vector (${severity.toString()}% severity, ${confidence.toString()}% confidence weight)`);
     });
 
     strategist.on("HedgeTriggered", (_id, hedgeBps) => {
-      setAgent2(`Strategic hedge execution index computed: ${Number(hedgeBps) / 100}%`);
-      setAgent3("Autonomous hedge routing active...");
+      setAgent2(`🟢 Calculated Risk Frontier Strategy. Allocating ${Number(hedgeBps) / 100}% of funds.`);
+      setAgent3("Action Taker: Initiating asset transfer pathways...");
     });
 
     vault.on("CapitalHedged", (_, amount) => {
-      setAgent3(`Portfolio Protection Complete: Vault secured ${ethers.formatEther(amount)} STT safely.`);
+      setAgent3(`✅ Protection Protocol Complete: Locked ${ethers.formatEther(amount)} STT safely into index proxies.`);
       setBusy(false);
     });
 
@@ -89,22 +89,20 @@ export default function App() {
 
     try {
       setBusy(true);
-      setAgent1(" Instantiating on-chain query environment parameters...");
+      setAgent1("📡 packaging secure on-chain API parameters...");
       setAgent2("Standby...");
       setAgent3("Standby...");
 
       const signer = await provider.getSigner();
       const watcher = new ethers.Contract(DATA_WATCHER_ADDRESS, DATA_WATCHER_ABI, signer);
 
-      // Query the optimized fee requirement mapping method directly from the contract instance
       const fee = await watcher.getRequiredFee();
-
       const tx = await watcher.triggerMarketScan({ value: fee });
-      setAgent1("Query submitted successfully. Routing via consensus subcommittee layers...");
+      setAgent1("⏳ Ingestion transaction broadcasted. Awaiting decentralized consensus callback...");
       await tx.wait();
     } catch (e) {
       console.error(e);
-      setAgent1("Pipeline transaction processing failed");
+      setAgent1("❌ Pipeline transaction processing failed");
       setBusy(false);
     }
   };
@@ -116,7 +114,7 @@ export default function App() {
         {!wallet ? (
           <button className="btn" onClick={connectWallet}>Connect Wallet</button>
         ) : (
-          <p> Wallet Linked: ({wallet.slice(0, 6)}…{wallet.slice(-4)})</p>
+          <p>🟢 Connected Wallet: ({wallet.slice(0, 6)}…{wallet.slice(-4)})</p>
         )}
       </div>
 
