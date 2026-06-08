@@ -116,7 +116,7 @@ export default function App() {
         {!wallet ? (
           <button className="btn" onClick={connectWallet}>Connect Wallet</button>
         ) : (
-          <p>鉁 Wallet Linked: ({wallet.slice(0, 6)}…{wallet.slice(-4)})</p>
+          <p> Wallet Linked: ({wallet.slice(0, 6)}…{wallet.slice(-4)})</p>
         )}
       </div>
 
