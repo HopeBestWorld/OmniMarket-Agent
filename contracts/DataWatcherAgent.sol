@@ -50,7 +50,6 @@ interface IRiskStrategist {
 
 /* ===================== CONTRACT ===================== */
 contract DataWatcherAgent {
-    address public owner;
     IRiskStrategist public riskStrategist;
     IAgentRequester public somniaPlatform;
 
@@ -65,17 +64,10 @@ contract DataWatcherAgent {
     event ScanTriggered(uint256 indexed scanId, uint256 platformRequestId);
     event AnomalyDetected(uint256 indexed scanId, uint256 riskScore);
 
-    error NotOwner(address caller);
     error PlatformNotSet();
     error InsufficientFee(uint256 sent, uint256 required);
 
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert NotOwner(msg.sender);
-        _;
-    }
-
     constructor(address _riskStrategist, address _somniaPlatform) {
-        owner = msg.sender;
         riskStrategist = IRiskStrategist(_riskStrategist);
         somniaPlatform = IAgentRequester(_somniaPlatform);
     }
@@ -114,9 +106,6 @@ contract DataWatcherAgent {
         emit ScanTriggered(scanCount, platformId);
     }
 
-    /* =====================================================
-       UPDATED: Changed data location pointers to calldata 
-       ===================================================== */
     function fulfillMarketScan(
         uint256 requestId,
         Response[] calldata responses,
