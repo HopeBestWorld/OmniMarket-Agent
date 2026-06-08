@@ -56,24 +56,24 @@ export default function App() {
     const vault = new ethers.Contract(RWA_VAULT_ADDRESS, RWA_VAULT_ABI, provider);
 
     watcher.on("ScanTriggered", (_scanId, id) => {
-      setAgent1(`打 Scan dispatched. Somnia live tracking thread ID: ${id.toString()}`);
+      setAgent1(`Scan dispatched. Somnia live tracking thread ID: ${id.toString()}`);
     });
 
     watcher.on("AnomalyDetected", (_scanId, score) => {
-      setAgent1(`猸 Real-world parsing context resolved. Extracted baseline drop value: ${score.toString()}%`);
+      setAgent1(`Real-world parsing context resolved. Extracted baseline drop value: ${score.toString()}%`);
     });
 
     strategist.on("ShockReceived", (_id, severity, confidence) => {
-      setAgent2(`繹 Deep verification active: Risk index is ${severity.toString()}% (Evaluated Confidence: ${confidence.toString()}%)`);
+      setAgent2(`Deep verification active: Risk index is ${severity.toString()}% (Evaluated Confidence: ${confidence.toString()}%)`);
     });
 
     strategist.on("HedgeTriggered", (_id, hedgeBps) => {
-      setAgent2(`塭 Strategic hedge execution index computed: ${Number(hedgeBps) / 100}%`);
+      setAgent2(`Strategic hedge execution index computed: ${Number(hedgeBps) / 100}%`);
       setAgent3("Autonomous hedge routing active...");
     });
 
     vault.on("CapitalHedged", (_, amount) => {
-      setAgent3(`險 Portfolio Protection Complete: Vault secured ${ethers.formatEther(amount)} STT safely.`);
+      setAgent3(`Portfolio Protection Complete: Vault secured ${ethers.formatEther(amount)} STT safely.`);
       setBusy(false);
     });
 
@@ -89,7 +89,7 @@ export default function App() {
 
     try {
       setBusy(true);
-      setAgent1("馯 Instantiating on-chain query environment parameters...");
+      setAgent1(" Instantiating on-chain query environment parameters...");
       setAgent2("Standby...");
       setAgent3("Standby...");
 
@@ -100,11 +100,11 @@ export default function App() {
       const fee = await watcher.getRequiredFee();
 
       const tx = await watcher.triggerMarketScan({ value: fee });
-      setAgent1("鉁 Query submitted successfully. Routing via consensus subcommittee layers...");
+      setAgent1("Query submitted successfully. Routing via consensus subcommittee layers...");
       await tx.wait();
     } catch (e) {
       console.error(e);
-      setAgent1("櫃 Pipeline transaction processing failed");
+      setAgent1("Pipeline transaction processing failed");
       setBusy(false);
     }
   };
