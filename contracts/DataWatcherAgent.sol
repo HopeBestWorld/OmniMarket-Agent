@@ -88,9 +88,6 @@ contract DataWatcherAgent {
         return operationalReserve + premiumRewardPot;
     }
 
-    /* =====================================================
-       MAIN ENTRYPOINT (Open for multi-user demonstration evaluation)
-       ===================================================== */
     function triggerMarketScan() external payable returns (uint256 platformId) {
         if (address(somniaPlatform) == address(0)) revert PlatformNotSet();
         scanCount++;
@@ -117,11 +114,14 @@ contract DataWatcherAgent {
         emit ScanTriggered(scanCount, platformId);
     }
 
+    /* =====================================================
+       UPDATED: Changed data location pointers to calldata 
+       ===================================================== */
     function fulfillMarketScan(
         uint256 requestId,
-        Response[] memory responses,
+        Response[] calldata responses,
         ResponseStatus status,
-        Request memory /* details */
+        Request calldata /* details */
     ) external {
         require(msg.sender == address(somniaPlatform), "Only platform provider can callback");
         if (!pendingQueries[requestId]) return;
